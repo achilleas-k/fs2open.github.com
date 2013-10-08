@@ -325,7 +325,7 @@ bool fred_init()
 	// NOTE : Fred should ALWAYS run in English. Otherwise it might swap in another language
 	// when saving - which would cause inconsistencies when externalizing to tstrings.tbl via Exstr
 	// trust me on this :)
-	lcl_init(LCL_ENGLISH);
+	lcl_init(FS2_OPEN_DEFAULT_LANGUAGE);
 
 	// Goober5000 - force init XSTRs (so they work, but only work in English, based on above comment)
 	extern int Xstr_inited;
@@ -1972,7 +1972,7 @@ void ai_update_goal_references(int type, const char *old_name, const char *new_n
 			ai_update_goal_references(Wings[i].ai_goals, type, old_name, new_name);
 }
 
-int query_referenced_in_ai_goals(int type, char *name)
+int query_referenced_in_ai_goals(int type, const char *name)
 {
 	int i;
 

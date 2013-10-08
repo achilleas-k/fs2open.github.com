@@ -2,7 +2,7 @@ dnl configure.ac for fs2_open
 dnl
 dnl $Id: configure.ac,v 1.31.2.4 2007-05-28 19:36:12 taylor Exp $
 
-AC_INIT(fs2_open, 3.6.19)
+AC_INIT(fs2_open, 3.7.1)
 AC_CONFIG_SRCDIR(code/freespace2/freespace.cpp)
 
 dnl we need at least version 2.54 of autoconf
@@ -54,6 +54,7 @@ AC_ARG_ENABLE(wxfred2,
 		[fs2_fred=$enableval],
 		[fs2_fred=no],
 )
+AM_CONDITIONAL([BUILD_WXFRED], [test x$fs2_fred = xyes])
 
 AC_ARG_ENABLE(speech,
 	AC_HELP_STRING([--enable-speech],
@@ -116,14 +117,14 @@ case "$target" in
 		# linux
 		echo "Using 64-bit Unix defines (for $host_os)"
 		fs2_os_linux="yes"
-		D_CFLAGS="$D_CFLAGS -m64 -mtune=i686 -msse -msse2 -ansi"
+		D_CFLAGS="$D_CFLAGS -m64 -mtune=generic -msse -msse2 -ansi -pipe"
 		D_CFLAGS="$D_CFLAGS -DLUA_USE_LINUX"
 		;;
 	*-*-linux*)
 		# linux
 		echo "Using Unix defines (for $host_os)"
 		fs2_os_linux="yes"
-		D_CFLAGS="$D_CFLAGS -mtune=i686 -mfpmath=sse -msse -msse2 -ansi"
+		D_CFLAGS="$D_CFLAGS -mtune=generic -mfpmath=sse -msse -msse2 -ansi -pipe"
 		D_CFLAGS="$D_CFLAGS -DLUA_USE_LINUX"
 		;;
 	*-*-darwin*)
@@ -193,8 +194,9 @@ if test "$fs2_speech" = "yes" ; then
 fi
 
 if test "$fs2_fred" = "yes" ; then
-	AM_OPTIONS_WXCONFIG
-	AM_PATH_WXCONFIG(2.4.2, wxWin=1)
+	WX_CONFIG_OPTIONS
+	reqwx=2.9.4
+	WX_CONFIG_CHECK([$reqwx], [wxWin=1], [wxWin=0], [all])
 
 	if test "$wxWin" != 1; then
 		AC_MSG_ERROR([
@@ -204,12 +206,12 @@ if test "$fs2_fred" = "yes" ; then
 			Please check that wx-config is in path, the directory
 			where wxWindows libraries are installed (returned by
 			'wx-config --libs' command) is in LD_LIBRARY_PATH or
-			equivalent variable and wxWindows version is 2.3.4 or above.
+			equivalent variable and wxWindows version is $reqwx or above.
 		])
 	fi
 
-	FS2_CXXFLAGS="$FS2_CXXFLAGS $WX_CXXFLAGS_ONLY"
-	FS2_LDFLAGS="$FS2_LDFLAGS $WX_LIBS"
+	D_CFLAGS="$D_CFLAGS $WX_CFLAGS -Iwxfred2"
+	FS2_LIBS="$FS2_LIBS $WX_LIBS"
 fi
 
 if test "$fs2_debug" = "yes" ; then

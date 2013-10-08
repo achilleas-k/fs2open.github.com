@@ -683,6 +683,8 @@ void obj_player_fire_stuff( object *objp, control_info ci )
 	shipp = NULL;
 	if((objp->type == OBJ_SHIP) && (objp->instance >= 0) && (objp->instance < MAX_SHIPS)){
 		shipp = &Ships[objp->instance];
+	} else {
+		return;
 	}
 
 	// single player pilots, and all players in multiplayer take care of firing their own primaries
@@ -1369,7 +1371,7 @@ void obj_move_all(float frametime)
 #endif
 
 		// pre-move
-		obj_move_all_pre(objp, frametime);
+		PROFILE("Pre Move", obj_move_all_pre(objp, frametime));
 
 		// store last pos and orient
 		objp->last_pos = cur_pos;
@@ -1382,12 +1384,12 @@ void obj_move_all(float frametime)
 				multi_oo_interp(objp);
 			} else {
 				// physics
-				obj_move_call_physics(objp, frametime);
+				PROFILE("Physics", obj_move_call_physics(objp, frametime));
 			}
 		}
 
 		// move post
-		obj_move_all_post(objp, frametime);
+		PROFILE("Post Move", obj_move_all_post(objp, frametime));
 
 		// Equipment script processing
 		if (objp->type == OBJ_SHIP) {
@@ -1453,6 +1455,7 @@ void obj_move_all(float frametime)
 	// do pre-collision stuff for beam weapons
 	beam_move_all_pre();
 
+	profile_begin("Collision Detection");
 	if ( Collisions_enabled ) {
 		if ( Cmdline_old_collision_sys ) {
 			obj_check_all_collisions();
@@ -1460,6 +1463,7 @@ void obj_move_all(float frametime)
 			obj_sort_and_collide();
 		}
 	}
+	profile_end("Collision Detection");
 
 	turret_swarm_check_validity();
 

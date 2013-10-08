@@ -416,7 +416,7 @@ typedef struct ship_flag_name {
 	int flag_list;						// is this flag in the 1st or 2nd ship flags list?
 } ship_flag_name;
 
-#define MAX_SHIP_FLAG_NAMES					9
+#define MAX_SHIP_FLAG_NAMES					15
 extern ship_flag_name Ship_flag_names[];
 
 // states for the flags variable within the ship structure
@@ -517,7 +517,10 @@ typedef struct ship_spark {
 #define AWACS_WARN_25		(1 << 1)
 #define AWACS_WARN_75		(1 << 2)
 
-typedef struct ship {
+// NOTE: Can't be treated as a struct anymore, since it has STL data structures in its object tree!
+class ship
+{
+public:
 	int	objnum;
 	int	ai_index;			// Index in Ai_info of ai_info associated with this ship.
 	int	ship_info_index;	// Index in ship_info for this ship
@@ -542,15 +545,13 @@ typedef struct ship {
 
 	// targeting laser info
 	char targeting_laser_bank;						// -1 if not firing, index into polymodel gun points if it _is_ firing
+	int targeting_laser_objnum;					// -1 if invalid, beam object # otherwise
+
 	// corkscrew missile stuff
 	ubyte num_corkscrew_to_fire;						// # of corkscrew missiles lef to fire
 	int corkscrew_missile_bank;
-	// END PACK
-
-	// targeting laser info
-	int targeting_laser_objnum;					// -1 if invalid, beam object # otherwise
-	// corkscrew missile stuff
 	int next_corkscrew_fire;						// next time to fire a corkscrew missile
+	// END PACK
 
 	int	final_death_time;				// Time until big fireball starts
 	int	death_time;				// Time until big fireball starts
@@ -796,7 +797,11 @@ typedef struct ship {
 	fix team_change_timestamp;
 	int team_change_time;
 
-} ship;
+	float autoaim_fov;
+
+	// reset to a completely blank ship
+	void clear();
+};
 
 struct ai_target_priority {
 	char name[NAME_LENGTH];
@@ -919,8 +924,9 @@ extern int ship_find_exited_ship_by_signature( int signature);
 #define SIF2_NO_ETS							(1 << 13)	// The E - No ETS on this ship class
 #define SIF2_NO_LIGHTING					(1 << 14)	// Valathil - No lighting for this ship
 #define SIF2_DYN_PRIMARY_LINKING			(1 << 15)	// RSAXVC - Dynamically generate weapon linking options
+#define SIF2_AUTO_SPREAD_SHIELDS			(1 << 16)	// zookeeper - auto spread shields
 // !!! IF YOU ADD A FLAG HERE BUMP MAX_SHIP_FLAGS !!!
-#define	MAX_SHIP_FLAGS	16		//	Number of distinct flags for flags field in ship_info struct
+#define	MAX_SHIP_FLAGS	17		//	Number of distinct flags for flags field in ship_info struct
 #define	SIF_DEFAULT_VALUE		0
 #define SIF2_DEFAULT_VALUE		0
 
@@ -1149,7 +1155,10 @@ typedef struct path_metadata {
 } path_metadata;
 
 // The real FreeSpace ship_info struct.
-typedef struct ship_info {
+// NOTE: Can't be treated as a struct anymore, since it has STL data structures in its object tree!
+class ship_info
+{
+public:
 	char		name[NAME_LENGTH];				// name for the ship
 	char		alt_name[NAME_LENGTH];			// display another name for the ship
 	char		short_name[NAME_LENGTH];		// short name, for use in the editor?
@@ -1291,6 +1300,9 @@ typedef struct ship_info {
 
 	float	max_hull_strength;				// Max hull strength of this class of ship.
 	float	max_shield_strength;
+	float	auto_shield_spread;
+	bool	auto_shield_spread_bypass;
+	int		auto_shield_spread_from_lod;
 
 	float	hull_repair_rate;				//How much of the hull is repaired every second
 	float	subsys_repair_rate;		//How fast 
@@ -1418,7 +1430,7 @@ typedef struct ship_info {
 	SCP_vector<cockpit_display_info> displays;
 
 	SCP_map<SCP_string, path_metadata> pathMetadata;
-} ship_info;
+};
 
 extern int Num_wings;
 extern ship Ships[MAX_SHIPS];
@@ -1440,7 +1452,6 @@ typedef struct engine_wash_info
 	float		length;			// length of engine wash, measured from thruster
 	float		intensity;		// intensity of engine wash
 	
-	engine_wash_info();
 } engine_wash_info;
 
 extern SCP_vector<engine_wash_info> Engine_wash_info;

@@ -239,7 +239,7 @@ void model_unload(int modelnum, int force)
 			}
 		}
 
-		vm_free(pm->submodel);
+		delete[] pm->submodel;
 	}
 
 	if ( !Cmdline_nohtl ) {
@@ -278,8 +278,7 @@ void model_unload(int modelnum, int force)
 	}
 
 	pm->id = 0;
-	memset( pm, 0, sizeof(polymodel));
-	vm_free( pm );
+	delete pm;
 
 	Polygon_models[num] = NULL;	
 }
@@ -1066,14 +1065,7 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 					Warning(LOCATION, "Model <%s> has a radius <= 0.1f\n", filename);
 				}
 
-				pm->submodel = (bsp_info *)vm_malloc( sizeof(bsp_info)*pm->n_models );
-				Assert(pm->submodel != NULL );
-				for ( i = 0; i < pm->n_models; i++ )
-				{
-					/* HACK: This is an almighty hack because it is late at night and I don't want to screw up a vm_free */
-					new ( &( pm->submodel[ i ].buffer ) ) vertex_buffer( );
-					pm->submodel[ i ].Reset( );
-				}
+				pm->submodel = new bsp_info[pm->n_models];
 
 				//Assert(pm->n_models <= MAX_SUBMODELS);
 
@@ -1834,7 +1826,7 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 
 						if (bank->glow_bitmap < 0)
 						{
-							Warning( LOCATION, "Couldn't open texture '%s'\nreferenced by model '%s'\n", glow_texture_name, pm->filename);
+							Warning( LOCATION, "Couldn't open glowpoint texture '%s'\nreferenced by model '%s'\n", glow_texture_name, pm->filename);
 						}
 						else
 						{
@@ -2298,19 +2290,6 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 	return 1;
 }
 
-void model_init_texture_map(texture_map *tmap)
-{
-	if (tmap == NULL)
-		return;
-
-	memset(tmap, 0, sizeof(texture_map));
-
-	for(int i = 0; i < TM_NUM_TYPES; i++)
-	{
-		tmap->textures[i].clear();
-	}
-}
-
 //Goober
 void model_load_texture(polymodel *pm, int i, char *file)
 {
@@ -2321,7 +2300,7 @@ void model_load_texture(polymodel *pm, int i, char *file)
 	strlwr(tmp_name);
 
 	texture_map *tmap = &pm->maps[i];
-	model_init_texture_map(tmap);
+	tmap->Clear();
 
 	//WMC - IMPORTANT!!
 	//The Fred_running checks are there so that FRED will see those textures and put them in the
@@ -2480,13 +2459,9 @@ int model_load(char *filename, int n_subsystems, model_subsystem *subsystems, in
 
 	mprintf(( "Loading model '%s'\n", filename ));
 
-	pm = (polymodel *)vm_malloc( sizeof(polymodel) );
-	Assert( pm != NULL );
-	
+	pm = new polymodel;	
 	Polygon_models[num] = pm;
 	
-	memset(pm, 0, sizeof(polymodel));
-
 	pm->n_paths = 0;
 	pm->paths = NULL;
 
@@ -2516,8 +2491,7 @@ int model_load(char *filename, int n_subsystems, model_subsystem *subsystems, in
 
 	if (read_model_file(pm, filename, n_subsystems, subsystems, ferror) < 0)	{
 		if (pm != NULL) {
-			vm_free(pm);
-			pm = NULL;
+			delete pm;
 		}
 
 		Polygon_models[num] = NULL;
@@ -4242,6 +4216,76 @@ void find_submodel_instance_point_normal(vec3d *outpnt, vec3d *outnorm, object *
 }
 
 /**
+ * Same as find_submodel_instance_point_normal, except that this takes and
+ * returns matrices instead of normals.
+ *  
+ * Finds the current location and rotation (in the ship's frame of reference) of
+ * a submodel point, taking into account the rotations of the submodel and any
+ * parent submodels it might have.
+ *
+ * @param *outpnt Output point
+ * @param *outorient Output matrix
+ * @param *ship_obj Ship object
+ * @param submodel_num The number of the submodel we're interested in
+ * @param *submodel_pnt The point which's current position we want, in the submodel's frame of reference
+ * @param *submodel_orient The local matrix which's current orientation in the ship's frame of reference we want
+ */
+void find_submodel_instance_point_orient(vec3d *outpnt, matrix *outorient, object *ship_obj, int submodel_num, vec3d *submodel_pnt, matrix *submodel_orient)
+{
+	Assert(ship_obj->type == OBJ_SHIP);
+
+	*outorient = *submodel_orient;
+	vm_vec_zero(outpnt);
+	matrix submodel_instance_matrix, rotation_matrix, inv_orientation;
+
+	polymodel_instance *pmi = model_get_instance(Ships[ship_obj->instance].model_instance_num);
+	polymodel *pm = model_get(Ship_info[Ships[ship_obj->instance].ship_info_index].model_num);
+
+	int mn = submodel_num;
+	while ( (mn >= 0) && (pm->submodel[mn].parent >= 0) ) {
+		vec3d offset = pm->submodel[mn].offset;
+
+		if ( mn == submodel_num) {
+			vec3d submodel_pnt_offset = *submodel_pnt;
+
+			rotation_matrix = pm->submodel[submodel_num].orientation;
+			vm_rotate_matrix_by_angles(&rotation_matrix, &pmi->submodel[submodel_num].angs);
+
+			vm_copy_transpose_matrix(&inv_orientation, &pm->submodel[submodel_num].orientation);
+
+			vm_matrix_x_matrix(&submodel_instance_matrix, &rotation_matrix, &inv_orientation);
+
+			vec3d tvec = submodel_pnt_offset;
+			vm_vec_unrotate(&submodel_pnt_offset, &tvec, &submodel_instance_matrix);
+
+			matrix tnorm = *outorient;
+			vm_matrix_x_matrix(outorient, &tnorm, &submodel_instance_matrix);
+
+			vm_vec_add2(&offset, &submodel_pnt_offset);
+		}
+
+		int parent_model_num = pm->submodel[mn].parent;
+
+		rotation_matrix = pm->submodel[parent_model_num].orientation;
+		vm_rotate_matrix_by_angles(&rotation_matrix, &pmi->submodel[parent_model_num].angs);
+
+		vm_copy_transpose_matrix(&inv_orientation, &pm->submodel[parent_model_num].orientation);
+
+		vm_matrix_x_matrix(&submodel_instance_matrix, &rotation_matrix, &inv_orientation);
+
+		vec3d tvec = offset;
+		vm_vec_unrotate(&offset, &tvec, &submodel_instance_matrix);
+
+		matrix tnorm = *outorient;
+		vm_matrix_x_matrix(outorient, &tnorm, &submodel_instance_matrix);
+
+		vm_vec_add2(outpnt, &offset);
+
+		mn = parent_model_num;
+	}
+}
+
+/**
  * Finds the current world location of a submodel, taking into account the
  * rotations of any parent submodels it might have.
  *  
@@ -4430,7 +4474,7 @@ void model_clear_instance(int model_num)
 	pm->gun_submodel_rotation = 0.0f;
 	// reset textures to original ones
 	for (i=0; i<pm->n_textures; i++ )	{
-		pm->maps[i].Reset();
+		pm->maps[i].ResetToOriginal();
 	}
 	
 	for (i=0; i<pm->n_models; i++ )	{

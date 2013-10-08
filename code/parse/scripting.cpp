@@ -82,7 +82,7 @@ int scripting_state_inited = 0;
 
 //*************************Scripting init and handling*************************
 
-void script_parse_table(char *filename)
+void script_parse_table(const char *filename)
 {
 	script_state *st = &Script_system;
 	int rval;
@@ -150,7 +150,7 @@ void script_parse_table(char *filename)
 	}
 
 	// add tbl/tbm to multiplayer validation list
-	extern void fs2netd_add_table_validation(char *tblname);
+	extern void fs2netd_add_table_validation(const char *tblname);
 	fs2netd_add_table_validation(filename);
 }
 
@@ -523,6 +523,7 @@ void script_state::SetHookObjects(int num, ...)
 	{
 		LuaError(LuaState, "Could not get HookVariable library to add hook variables - get a coder");
 	}
+	va_end(vl);
 }
 
 //This pair of abstraction functions handles
@@ -710,6 +711,7 @@ void script_state::RemHookVars(unsigned int num, ...)
 				lua_pushnil(LuaState);
 				lua_rawset(LuaState, amt_ldx);
 			}
+			va_end(vl);
 
 			this->CloseHookVarTable();
 		}
@@ -1277,7 +1279,7 @@ flag_def_list* script_parse_action()
 
 	return NULL;
 }
-bool script_state::ParseCondition(char *filename)
+bool script_state::ParseCondition(const char *filename)
 {
 	ConditionedHook *chp = NULL;
 
