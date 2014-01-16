@@ -51,9 +51,7 @@ int Msg_instance;						// variable which holds ship/wing instance to send the me
 int Msg_shortcut_command;			// holds command when using a shortcut key
 LOCAL int Msg_target_objnum;				// id of the current target of the player
 LOCAL ship_subsys *Msg_targeted_subsys;// pointer to current subsystem which is targeted
-//#ifndef NDEBUG
 LOCAL	int Msg_enemies;						// tells us whether or not to message enemy ships or friendlies
-//#endif
 
 LOCAL int Msg_eat_key_timestamp;			// used to temporarily "eat" keys
 
@@ -655,7 +653,7 @@ int hud_squadmsg_can_rearm( ship *shipp )
 	return 1;
 }
 
-// calls for repair/rearm of the player ship.  Checks for the presense of the support
+// calls for repair/rearm of the player ship.  Checks for the presence of the support
 // ship and does the appropriate action if found
 void hud_squadmsg_repair_rearm( int toggle_state, object *objp)
 {
@@ -700,7 +698,7 @@ void hud_squadmsg_repair_rearm( int toggle_state, object *objp)
 					message_send_builtin_to_player( MESSAGE_ON_WAY, &Ships[robjp->instance], MESSAGE_PRIORITY_NORMAL, MESSAGE_TIME_SOON, 0, 0, multi_player_num, multi_player_team );
 
 				} else {
-					// if we are in this part of the if statment, a support ship has been warped in to
+					// if we are in this part of the if statement, a support ship has been warped in to
 					// service us.  Issue appropriate message
 					message_send_builtin_to_player( MESSAGE_REARM_WARP, NULL, MESSAGE_PRIORITY_NORMAL, MESSAGE_TIME_SOON, 0, 0, multi_player_num, multi_player_team );
 				}
@@ -2177,7 +2175,6 @@ void hud_squadmsg_toggle()
 	Player->flags ^= PLAYER_FLAGS_MSG_MODE;
 }
 
-//#ifndef NDEBUG
 // extern entry point to allow messaging of enemies
 void hud_enemymsg_toggle()
 {
@@ -2186,7 +2183,6 @@ void hud_enemymsg_toggle()
 	if ( Player->flags & PLAYER_FLAGS_MSG_MODE )
 		Msg_enemies = 1;
 }
-//#endif
 
 // external entry point into code when a keyboard shortcut is used for a command
 // we are passed in an ID for the command to set internal variables.  This command

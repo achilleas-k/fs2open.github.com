@@ -21,10 +21,9 @@ Makefile
 Makefile.in
 aclocal.m4
 autom4te.cache/
-code/.deps/
 code/Makefile
 code/Makefile.in
-code/ai/.aibig.cpp.swp
+code/wxFRED2_*
 code/fs2_open_3.6.19
 compile
 config.guess
@@ -35,8 +34,8 @@ configure
 depcomp
 install-sh
 missing
-
-# ctags
+.svn
+*.layout
 *tags
 
 # .deps directory
