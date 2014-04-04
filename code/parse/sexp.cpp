@@ -244,6 +244,7 @@ sexp_oper Operators[] = {
 	{ "is-facing",						OP_IS_FACING,							3,	4,			SEXP_BOOLEAN_OPERATOR,	},
 	{ "is_tagged",						OP_IS_TAGGED,							1,	1,			SEXP_BOOLEAN_OPERATOR,	},
 	{ "has-been-tagged-delay",			OP_HAS_BEEN_TAGGED_DELAY,				2,	INT_MAX,	SEXP_BOOLEAN_OPERATOR,	},
+	{ "are-ship-flags-set",				OP_ARE_SHIP_FLAGS_SET,					2,	INT_MAX,	SEXP_BOOLEAN_OPERATOR,	},	// Karajorma
 
 	//Shields, Engines and Weapons Sub-Category
 	{ "has-primary-weapon",				OP_HAS_PRIMARY_WEAPON,					3,	INT_MAX,	SEXP_BOOLEAN_OPERATOR,	},	// Karajorma
@@ -564,6 +565,8 @@ sexp_oper Operators[] = {
 	//HUD Sub-Category
 	{ "hud-disable",					OP_HUD_DISABLE,							1,	1,			SEXP_ACTION_OPERATOR,	},	// Goober5000
 	{ "hud-disable-except-messages",	OP_HUD_DISABLE_EXCEPT_MESSAGES,			1,	1,			SEXP_ACTION_OPERATOR,	},	// Goober5000
+	{ "hud-set-custom-gauge-active",	OP_HUD_SET_CUSTOM_GAUGE_ACTIVE,			2, 	INT_MAX, 	SEXP_ACTION_OPERATOR,	},
+	{ "hud-set-retail-gauge-active",	OP_HUD_SET_RETAIL_GAUGE_ACTIVE,			2, 	INT_MAX,	SEXP_ACTION_OPERATOR,	},
 	{ "hud-set-text",					OP_HUD_SET_TEXT,						2,	2,			SEXP_ACTION_OPERATOR,	},	//WMCoolmon
 	{ "hud-set-text-num",				OP_HUD_SET_TEXT_NUM,					2,	2,			SEXP_ACTION_OPERATOR,	},	//WMCoolmon
 	{ "hud-set-message",				OP_HUD_SET_MESSAGE,						2,	2,			SEXP_ACTION_OPERATOR,	},	//The E
@@ -572,8 +575,8 @@ sexp_oper Operators[] = {
 	{ "hud-set-coords",					OP_HUD_SET_COORDS,						3,	3,			SEXP_ACTION_OPERATOR,	},	//WMCoolmon
 	{ "hud-set-color",					OP_HUD_SET_COLOR,						4,	4,			SEXP_ACTION_OPERATOR,	},	//WMCoolmon
 	{ "hud-display-gauge",				OP_HUD_DISPLAY_GAUGE,					2,	2,			SEXP_ACTION_OPERATOR,	},
-	{ "hud-gauge-set-active",			OP_HUD_GAUGE_SET_ACTIVE,				2,	2,			SEXP_ACTION_OPERATOR,	},
-	{ "hud-activate-gauge-type",		OP_HUD_ACTIVATE_GAUGE_TYPE,				2,	2,			SEXP_ACTION_OPERATOR,	},
+	{ "hud-gauge-set-active",			OP_HUD_GAUGE_SET_ACTIVE,				2,	2,			SEXP_ACTION_OPERATOR,	},	//Deprecated
+	{ "hud-activate-gauge-type",		OP_HUD_ACTIVATE_GAUGE_TYPE,				2,	2,			SEXP_ACTION_OPERATOR,	},	//Deprecated
 	{ "hud-clear-messages",				OP_HUD_CLEAR_MESSAGES,					0,	0,			SEXP_ACTION_OPERATOR,	},	// swifty
 	{ "hud-set-max-targeting-range",	OP_HUD_SET_MAX_TARGETING_RANGE,			1,	1,			SEXP_ACTION_OPERATOR,	},	// Goober5000
 
@@ -622,6 +625,7 @@ sexp_oper Operators[] = {
 	{ "set-camera-shudder",				OP_SET_CAMERA_SHUDDER,					2,	2,			SEXP_ACTION_OPERATOR,	},
 	{ "supernova-start",				OP_SUPERNOVA_START,						1,	1,			SEXP_ACTION_OPERATOR,	},
 	{ "supernova-stop",					OP_SUPERNOVA_STOP,						0,	0,			SEXP_ACTION_OPERATOR,	},	//CommanderDJ
+	{ "set-motion-debris-override",		OP_SET_MOTION_DEBRIS,					1,  1,			SEXP_ACTION_OPERATOR,	},	// The E
 
 	//Background and Nebula Sub-Category
 	{ "mission-set-nebula",				OP_MISSION_SET_NEBULA,					1,	1,			SEXP_ACTION_OPERATOR,	},	// Sesquipedalian
@@ -9821,6 +9825,23 @@ void sexp_hud_gauge_set_active(int n) {
 	}
 }
 
+void sexp_hud_set_custom_gauge_active(int node) {
+	HudGauge* hg;
+	bool activate = (is_sexp_true(node) > 0);
+	node = CDR(node);
+	for(; node >= 0; node = CDR(node)) {
+
+		char* name = CTEXT(node);
+		hg = hud_get_gauge(name);
+
+		if (hg != NULL) {
+			hg->updateActive(activate);
+		}
+
+	}
+
+}
+
 int hud_gauge_type_lookup(char* name) {
 	for(int i = 0; i < Num_hud_gauge_types; i++) {
 		if(!stricmp(name, Hud_gauge_types[i].name))
@@ -9850,6 +9871,37 @@ void sexp_hud_activate_gauge_type(int n) {
 			}
 		}
 	}
+}
+
+void sexp_hud_set_retail_gauge_active(int node) {
+
+	bool activate = (is_sexp_true(node) > 0);
+	node = CDR(node);
+
+	for(; node >= 0; node = CDR(node)) {
+
+		int config_type = hud_gauge_type_lookup(CTEXT(node));
+
+		if (config_type != -1) {
+			if(Ship_info[Player_ship->ship_info_index].hud_gauges.size() > 0) {
+			size_t num_gauges = Ship_info[Player_ship->ship_info_index].hud_gauges.size();
+
+			for(size_t i = 0; i < num_gauges; i++) {
+				if (Ship_info[Player_ship->ship_info_index].hud_gauges[i]->getObjectType() == config_type)
+					Ship_info[Player_ship->ship_info_index].hud_gauges[i]->updateSexpOverride(!activate);
+				}
+			} else {
+			size_t num_gauges = default_hud_gauges.size();
+
+			for(size_t i = 0; i < num_gauges; i++) {
+				if (default_hud_gauges[i]->getObjectType() == config_type)
+					default_hud_gauges[i]->updateSexpOverride(!activate);
+				}
+			}
+		}
+
+	}
+
 }
 
 void multi_sexp_hud_display_gauge()
@@ -12802,24 +12854,10 @@ void alter_flag_for_all_ships(bool future_ships, int object_flag, int object_fla
 	}
 }
 
-void sexp_alter_ship_flag(int node)
+bool sexp_check_flag_arrays(char *flag_name, int &object_flag, int &object_flag2, int &ship_flags, int &ship_flags2, int &parse_obj_flag, int &parse_obj_flag2, int &ai_flag, int &ai_flag2)
 {
-	char *flag_name;
-	int object_flag = 0;
-	int object_flag2 = 0;
-	int ship_flags = 0;
-	int ship_flags2 = 0;
-	int parse_obj_flag = 0;
-	int parse_obj_flag2 = 0;
-	int ai_flag = 0;
-	int ai_flag2 = 0;
-	bool set_flag = false; 
-	bool send_multi = false;
-	bool future_ships = false; 
 	int i;
-	object_ship_wing_point_team oswpt;
-
-	flag_name = CTEXT(node); 
+	bool send_multi = false;
 
 	for ( i = 0; i < MAX_OBJECT_FLAG_NAMES; i++) {
 		if (!stricmp(Object_flag_names[i].flag_name, flag_name)) {
@@ -12876,6 +12914,86 @@ void sexp_alter_ship_flag(int node)
 			break;
 		}
 	}
+
+	return send_multi;
+}
+
+int sexp_are_ship_flags_set(int node)
+{
+	char *flag_name;
+	ship *shipp;
+	int object_flag = 0;
+	int object_flag2 = 0;
+	int ship_flags = 0;
+	int ship_flags2 = 0;
+	int parse_obj_flag = 0;
+	int parse_obj_flag2 = 0;
+	int ai_flag = 0;
+	int ai_flag2 = 0;
+
+	shipp = sexp_get_ship_from_node(node);
+
+	// return false if the ship doesn't exist
+	if (shipp == NULL) {
+		return 0;
+	}
+
+	node = CDR(node); 
+
+	while (node != -1) {
+		flag_name = CTEXT(node); 
+		sexp_check_flag_arrays(flag_name, object_flag, object_flag2, ship_flags, ship_flags2, parse_obj_flag, parse_obj_flag2, ai_flag, ai_flag2);
+
+		// now check the flags
+		if (object_flag) {
+			if (!(Objects[shipp->objnum].flags & object_flag))
+				return 0; 
+		}
+		// if we ever get object flags 2 - they go here.
+
+		if (ship_flags) {
+			if (!(shipp->flags & ship_flags))
+				return 0; 
+		}
+		if (ship_flags2) {
+			if (!(shipp->flags2 & ship_flags2))
+				return 0; 
+		}
+
+		// we don't check parse flags
+
+		if (ai_flag) {
+			if (!(Ai_info[shipp->ai_index].ai_flags & ai_flag))
+				return 0; 
+		}
+
+		// no ai flags 2 yet. When we do, they go here.
+		node = CDR(node); 
+	}
+
+	// if we're still here, all the flags we were looking for were present
+	return 1; 
+}
+
+void sexp_alter_ship_flag(int node)
+{
+	char *flag_name;
+	int object_flag = 0;
+	int object_flag2 = 0;
+	int ship_flags = 0;
+	int ship_flags2 = 0;
+	int parse_obj_flag = 0;
+	int parse_obj_flag2 = 0;
+	int ai_flag = 0;
+	int ai_flag2 = 0;
+	bool set_flag = false; 
+	bool send_multi = false;
+	bool future_ships = false; 
+	object_ship_wing_point_team oswpt;
+
+	flag_name = CTEXT(node); 
+
+	send_multi = sexp_check_flag_arrays(flag_name, object_flag, object_flag2, ship_flags, ship_flags2, parse_obj_flag, parse_obj_flag2, ai_flag, ai_flag2); 
 
 	node = CDR(node); 
 	if (is_sexp_true(node)) {
@@ -14676,7 +14794,7 @@ void sexp_set_death_message(int n)
 	// but use an actual message if one exists
 	for (i=0; i<Num_messages; i++)
 	{
-		if (!stricmp(Messages[i].name, CTEXT(n)))
+		if (!stricmp(Messages[i].name, Player->death_message.c_str()))
 		{
 			Player->death_message = Messages[i].message;
 			break;
@@ -20712,7 +20830,7 @@ void sexp_show_subtitle_text(int node)
 	// but use an actual message if one exists
 	for (i=0; i<Num_messages; i++)
 	{
-		if (!stricmp(Messages[i].name, CTEXT(n)))
+		if (!stricmp(Messages[i].name, buffer))
 		{
 			buffer = Messages[i].message;
 			break;
@@ -21339,7 +21457,7 @@ bool test_point_within_box(vec3d *test_point, vec3d *box_corner_1, vec3d *box_co
 	if (reference_ship_obj != NULL) 
 	{
 		vm_vec_sub(&tempv, test_point, &reference_ship_obj->pos);
-		vm_vec_unrotate(&test_point_buf, &tempv, &reference_ship_obj->orient);
+		vm_vec_rotate(&test_point_buf, &tempv, &reference_ship_obj->orient);
 
 		test_point = &test_point_buf;
 	}
@@ -21637,6 +21755,10 @@ int sexp_player_is_cheating_bastard() {
 	}
 
 	return SEXP_FALSE;
+}
+
+void sexp_set_motion_debris(int node) {
+	Motion_debris_override = is_sexp_true(node);
 }
 
 /**
@@ -22356,6 +22478,10 @@ int eval_sexp(int cur_node, int referenced_node)
 
 			case OP_HAS_BEEN_TAGGED_DELAY:
 				sexp_val = sexp_has_been_tagged_delay(node);
+				break;
+
+			case OP_ARE_SHIP_FLAGS_SET:
+				sexp_val = sexp_are_ship_flags_set(node);
 				break;
 
 			case OP_CAP_SUBSYS_CARGO_KNOWN_DELAY:
@@ -23510,6 +23636,11 @@ int eval_sexp(int cur_node, int referenced_node)
 				sexp_supernova_stop(node);
 				break;
 
+			case OP_SET_MOTION_DEBRIS:
+				sexp_val = SEXP_TRUE;
+				sexp_set_motion_debris(node);
+				break;
+
 			case OP_SHIELD_RECHARGE_PCT:
 				sexp_val = sexp_shield_recharge_pct(node);
 				break;
@@ -24004,6 +24135,11 @@ int eval_sexp(int cur_node, int referenced_node)
 				sexp_hud_gauge_set_active(node);
 				break;
 
+			case OP_HUD_SET_CUSTOM_GAUGE_ACTIVE:
+				sexp_val = SEXP_TRUE;
+				sexp_hud_set_custom_gauge_active(node);
+				break;
+
 			case OP_HUD_CLEAR_MESSAGES:
 				sexp_val = SEXP_TRUE;
 				sexp_hud_clear_messages();
@@ -24012,6 +24148,11 @@ int eval_sexp(int cur_node, int referenced_node)
 			case OP_HUD_ACTIVATE_GAUGE_TYPE:
 				sexp_val = SEXP_TRUE;
 				sexp_hud_activate_gauge_type(node);
+				break;
+
+			case OP_HUD_SET_RETAIL_GAUGE_ACTIVE:
+				sexp_val = SEXP_TRUE;
+				sexp_hud_set_retail_gauge_active(node);
 				break;
 
 			case OP_ADD_TO_COLGROUP:
@@ -24644,6 +24785,7 @@ int query_operator_return_type(int op)
 		case OP_IS_IN_BOX:
 		case OP_IS_IN_MISSION:
 		case OP_PLAYER_IS_CHEATING_BASTARD:
+		case OP_ARE_SHIP_FLAGS_SET:
 			return OPR_BOOL;
 
 		case OP_PLUS:
@@ -25039,6 +25181,8 @@ int query_operator_return_type(int op)
 		case OP_SET_THRUSTERS:
 		case OP_SET_PLAYER_THROTTLE_SPEED:
 		case OP_DEBUG:
+		case OP_HUD_SET_CUSTOM_GAUGE_ACTIVE:
+		case OP_HUD_SET_RETAIL_GAUGE_ACTIVE:
 		case OP_ALTER_SHIP_FLAG:
 		case OP_CHANGE_TEAM_COLOR:
 		case OP_NEBULA_CHANGE_PATTERN:
@@ -25046,6 +25190,7 @@ int query_operator_return_type(int op)
 		case OP_COPY_VARIABLE_BETWEEN_INDEXES:
 		case OP_SET_ETS_VALUES:
 		case OP_CALL_SSM_STRIKE:
+		case OP_SET_MOTION_DEBRIS:
 			return OPR_NULL;
 
 		case OP_AI_CHASE:
@@ -26161,6 +26306,13 @@ int query_operator_argument_type(int op, int argnum)
 				return OPF_SHIP;
 			}
 
+		case OP_ARE_SHIP_FLAGS_SET:
+			if (argnum == 0) {
+				return OPF_SHIP;
+			} else {
+				return OPF_SHIP_FLAG;
+			}
+
 		case OP_CAP_SUBSYS_CARGO_KNOWN_DELAY:
 			if ( argnum == 0 ) {
 				return OPF_POSITIVE;
@@ -27073,6 +27225,18 @@ int query_operator_argument_type(int op, int argnum)
 			else
 				return OPF_BOOL;
 
+		case OP_HUD_SET_CUSTOM_GAUGE_ACTIVE:
+			if (argnum == 0)
+				return OPF_BOOL;
+			else
+				return OPF_STRING;
+
+		case OP_HUD_SET_RETAIL_GAUGE_ACTIVE:
+			if (argnum == 0)
+				return OPF_BOOL;
+			else
+				return OPF_HUD_GAUGE;
+
 		case OP_GET_COLGROUP_ID:
 			return OPF_SHIP;
 
@@ -27104,6 +27268,9 @@ int query_operator_argument_type(int op, int argnum)
 				return OPF_BOOL;
 			else
 				return OPF_SHIP;
+
+		case OP_SET_MOTION_DEBRIS:
+			return OPF_BOOL;
 
 		default:
 			Int3();
@@ -28668,6 +28835,8 @@ int get_subcategory(int sexp_id)
 
 		case OP_HUD_DISABLE:
 		case OP_HUD_DISABLE_EXCEPT_MESSAGES:
+		case OP_HUD_SET_CUSTOM_GAUGE_ACTIVE:
+		case OP_HUD_SET_RETAIL_GAUGE_ACTIVE:
 		case OP_HUD_SET_TEXT:
 		case OP_HUD_SET_TEXT_NUM:
 		case OP_HUD_SET_MESSAGE:
@@ -28726,6 +28895,7 @@ int get_subcategory(int sexp_id)
 		case OP_SET_CAMERA_SHUDDER:
 		case OP_SUPERNOVA_START:
 		case OP_SUPERNOVA_STOP:
+		case OP_SET_MOTION_DEBRIS:
 			return CHANGE_SUBCATEGORY_CUTSCENES;
 
 
@@ -28821,6 +28991,7 @@ int get_subcategory(int sexp_id)
 		case OP_IS_FACING:
 		case OP_IS_IN_MISSION:
 		case OP_NAV_ISLINKED:
+		case OP_ARE_SHIP_FLAGS_SET:
 			return STATUS_SUBCATEGORY_SHIP_STATUS;
 
 		case OP_SHIELD_RECHARGE_PCT:
@@ -30593,6 +30764,12 @@ sexp_help_struct Sexp_help[] = {
 		"\t1:\tDelay in seconds after which sexpression will return true when all cargo scanned."
 		"\tRest:\tNames of ships to check if tagged.." },
 
+	{ OP_ARE_SHIP_FLAGS_SET, "Are ship flags set (Boolean operator)\r\n"
+		"\tReturns true if all of the specified flags have been set for this particular ship.\r\n\r\n"
+		"Takes 2 or more arguments...\r\n"
+		"\t1:\tName of the ship."
+		"\tRest:\tShip, object or ai flags which might be set for this ship.." },
+
 	{ OP_CAP_SUBSYS_CARGO_KNOWN_DELAY, "Is capital ship subsystem cargo known (delay) (Boolean operator)\r\n"
 		"\tReturns true if all of the specified subsystem cargo is known by the player.\r\n"
 		"\tNote: Cargo must be explicitly named.\r\n\r\n"
@@ -31163,7 +31340,7 @@ sexp_help_struct Sexp_help[] = {
 		"\t3:\tx coordinate to be targeted\r\n"
 		"\t4:\ty coordinate to be targeted\r\n"
 		"\t5:\tz coordinate to be targeted\r\n"
-		"\t6:\tWhether to force the beam to fire (disregarding FOV and subsystem status) (optional)\r\n"
+		"\t6:\t(Optional Operator) Whether to force the beam to fire (disregarding FOV and subsystem status). Defaults to False\r\n"
 		"\t7:\tsecond x coordinate to be targeted (optional; only used for slash beams)\r\n"
 		"\t8:\tsecond y coordinate to be targeted (optional; only used for slash beams)\r\n"
 		"\t9:\tsecond z coordinate to be targeted (optional; only used for slash beams)\r\n" },
@@ -32402,7 +32579,7 @@ sexp_help_struct Sexp_help[] = {
 		"\t2:\tText that will be displayed. This text will be treated as directive text, meaning that references to mapped keys will be replaced with the user's preferences.\r\n"
 	},
 
-	{OP_HUD_GAUGE_SET_ACTIVE, "hud-gauge-set-active\r\n"
+	{OP_HUD_GAUGE_SET_ACTIVE, "hud-gauge-set-active (deprecated)\r\n"
 		"\tActivates or deactivates a given custom gauge."
 		"Takes 2 Arguments...\r\n"
 		"\t1:\tHUD Gauge name\r\n"
@@ -32414,11 +32591,25 @@ sexp_help_struct Sexp_help[] = {
 		"Takes no arguments\r\n"
 	},
 
-	{OP_HUD_ACTIVATE_GAUGE_TYPE, "hud-activate-gauge-type\r\n"
+	{OP_HUD_ACTIVATE_GAUGE_TYPE, "hud-activate-gauge-type (deprecated)\r\n"
 		"\tActivates or deactivates all hud gauges of a given type."
 		"Takes 2 Arguments...\r\n"
 		"\t1:\tGauge Type\r\n"
 		"\t2:\tBoolean, whether or not to display this gauge\r\n"
+	},
+
+	{OP_HUD_SET_CUSTOM_GAUGE_ACTIVE, "hud-set-custom-gauge-active\r\n"
+		"\tActivates or deactivates a custom hud gauge defined in hud_gauges.tbl."
+		"Takes 2 Arguments...\r\n"
+		"\t1:\tBoolean, whether or not to display this gauge\r\n"
+		"\tRest:\tHUD Gauge name\r\n"
+	},
+
+	{OP_HUD_SET_RETAIL_GAUGE_ACTIVE, "hud-set-custom-gauge-active\r\n"
+		"\tActivates or deactivates a retail hud gauge grouping."
+		"Takes 2 Arguments...\r\n"
+		"\t1:\tBoolean, whether or not to display this gauge\r\n"
+		"\tRest:\tHUD Gauge Group name\r\n"
 	},
 
 	{OP_ADD_TO_COLGROUP, "add-to-collision-group\r\n"
@@ -32492,6 +32683,13 @@ sexp_help_struct Sexp_help[] = {
 
 	{OP_PLAYER_IS_CHEATING_BASTARD, "player-is-cheating\r\n"
 		"\tReturns true if the player is or has been cheating in this mission.\r\n"
+	},
+
+	{ OP_SET_MOTION_DEBRIS, "set-motion-debris-override\r\n"
+		"\tControls whether or not motion debris should be active.\r\n"
+		"\tThis overrides any choice made by the user through the -nomotiondebris commandline flag."
+		"Takes 1 argument...\r\n"
+		"\t1:\tBoolean: True will disable motion debris, False reenable it.\r\n"
 	}
 };
 

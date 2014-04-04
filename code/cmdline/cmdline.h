@@ -96,6 +96,7 @@ extern int Cmdline_ship_choice_3d;
 extern int Cmdline_weapon_choice_3d;
 extern int Cmdline_warp_flash;
 extern int Cmdline_autopilot_interruptable;
+extern int Cmdline_stretch_menu;
 
 // Audio related
 extern int Cmdline_query_speech;
@@ -151,5 +152,7 @@ extern int Cmdline_no_grab;
 #endif
 extern int Cmdline_reparse_mainhall;
 extern bool Cmdline_frame_profile;
+extern bool Cmdline_profile_write_file;
+extern bool Cmdline_no_unfocus_pause;
 
 #endif

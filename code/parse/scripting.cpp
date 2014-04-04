@@ -311,7 +311,10 @@ bool ConditionedHook::ConditionsValid(int action, object *objp, int more_data)
 				}
 			case CHC_WEAPONCLASS:
 				{
-					if (!(action == CHA_ONWPSELECTED || action == CHA_ONWPDESELECTED || action == CHA_ONWPEQUIPPED || action == CHA_ONWPFIRED || action == CHA_ONTURRETFIRED )) {
+					if (action == CHA_COLLIDEWEAPON) {
+						if (stricmp(Weapon_info[more_data].name, scp->data.name) != 0)
+							return false;
+					} else if (!(action == CHA_ONWPSELECTED || action == CHA_ONWPDESELECTED || action == CHA_ONWPEQUIPPED || action == CHA_ONWPFIRED || action == CHA_ONTURRETFIRED )) {
 						if(objp == NULL || (objp->type != OBJ_WEAPON && objp->type != OBJ_BEAM))
 							return false;
 						else if (( objp->type == OBJ_WEAPON) && (stricmp(Weapon_info[Weapons[objp->instance].weapon_info_index].name, scp->data.name) != 0 ))
@@ -667,6 +670,8 @@ void script_state::SetHookVar(char *name, char format, void *data)
 			{
 				if(format == 's')
 					ade_set_args(LuaState, fmt, data);
+				else if (format == 'i')
+					ade_set_args(LuaState, fmt, *(int*)data);
 				else
 					ade_set_args(LuaState, fmt, *(ade_odata*)data);
 			}
