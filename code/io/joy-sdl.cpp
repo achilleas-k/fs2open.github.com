@@ -15,6 +15,9 @@
 #include "io/joy_ff.h"
 #include "osapi/osapi.h"
 #include "SDL.h"
+#include <math.h>
+
+#define _USE_MATH_DEFINES
 
 static int Joy_inited = 0;
 static int joy_num_sticks = 0;
@@ -231,7 +234,9 @@ int joy_get_scaled_reading(int raw, int axn)
 
 	raw -= joystick.axis_center[axn];
 
-	dead_zone = (joystick.axis_max[axn] - joystick.axis_min[axn]) * Dead_zone_size / 100;
+	//dead_zone = (joystick.axis_max[axn] - joystick.axis_min[axn]) * Dead_zone_size / 100;
+        // TODO: revert this - using deadzone to switch curves in-game for testing
+        dead_zone = 0;
 
 	if (raw < -dead_zone) {
 		rng = joystick.axis_center[axn] - joystick.axis_min[axn] - dead_zone;
@@ -256,8 +261,35 @@ int joy_get_scaled_reading(int raw, int axn)
 	// find percent of max axis is at
 	percent = (float) d / (float) rng;
 
-	// work sensitivity on axis value
-	percent = (percent * sensitivity_percent + percent * percent * percent * percent * percent * non_sensitivity_percent);
+        // work sensitivity on axis value
+        switch (Dead_zone_size) {
+            case 0:
+                // classic curve
+                percent = (percent * sensitivity_percent + percent * percent * percent * percent * percent * non_sensitivity_percent);
+                break;
+            case 5:
+                // from herra
+                percent = (1.0f-cos(percent*M_PI*(Joy_sensitivity+1)/10.0f))/(1.0f-cos(M_PI*(Joy_sensitivity+1)/10.0f));
+                break;
+            case 10:
+                // pure exponential (no sensitivity adjustment)
+                percent = (exp(percent)-1.0f)/(exp(1)-1.0f);
+                break;
+            case 15:
+                // stupid piece-wise "curve"
+                if (percent < 0.7f) {
+                    percent = 0.1f;
+                } else if (percent < 0.8f) {
+                    percent = 0.2f;
+                } else if (percent < 0.9f) {
+                    percent = 0.3f;
+                } else {
+                    percent = 1.0f;
+                }
+                break;
+            default:
+                percent = 0.1f;
+        }
 
 	x = (int) ((float) F1_0 * percent);
 
