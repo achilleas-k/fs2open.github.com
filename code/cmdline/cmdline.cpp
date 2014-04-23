@@ -194,6 +194,8 @@ Flag exe_params[] =
 	{ "-profile_frame_time","Profile engine subsystems",				true,	0,					EASY_DEFAULT,		"Dev Tool",		"http://www.hard-light.net/wiki/index.php/Command-Line_Reference#-profile_frame_timings", },
 	{ "-profile_write_file", "Write profiling information to file",		true,	0,					EASY_DEFAULT,		"Dev Tool",		"http://www.hard-light.net/wiki/index.php/Command-Line_Reference#-profile_write_file", },
 	{ "-no_unfocused_pause","Don't pause if the window isn't focused",	true,	0,					EASY_DEFAULT,		"Dev Tool",		"http://www.hard-light.net/wiki/index.php/Command-Line_Reference#-no_unfocused_pause", },
+
+	{ "-joystick_curves",   "Changes the joystick axis gain curves",    true,   0,                  EASY_DEFAULT,       "Input",        "" },
 };
 
 // here are the command line parameters that we will be using for FreeSpace
@@ -440,6 +442,11 @@ int Cmdline_reparse_mainhall = 0;
 bool Cmdline_frame_profile = false;
 bool Cmdline_profile_write_file = false;
 bool Cmdline_no_unfocus_pause = false;
+
+// Input related
+cmdline_parm joystick_curves("-joystick_curves", NULL);
+
+int Cmdline_joystick_curves = 0;
 
 // Other
 cmdline_parm get_flags_arg("-get_flags", NULL);
@@ -1585,6 +1592,11 @@ bool SetCmdlineParams()
 	if (no_unfocused_pause_arg.found())
 	{
 		Cmdline_no_unfocus_pause = true;
+	}
+
+	if (joystick_curves.found())
+	{
+		Cmdline_joystick_curves = joystick_curves.get_int();
 	}
 
 	//Deprecated flags - CommanderDJ

@@ -6,15 +6,17 @@
  * the source.
  */
 
+#include "cmdline/cmdline.h"
 #include "globalincs/pstypes.h"
 #include "io/joy.h"
-#include "math/fix.h"
+#include "io/joy_ff.h"
 #include "io/key.h"
 #include "io/timer.h"
-#include "osapi/osregistry.h"
-#include "io/joy_ff.h"
+#include "math/fix.h"
 #include "osapi/osapi.h"
+#include "osapi/osregistry.h"
 #include "SDL.h"
+
 #include <math.h>
 
 #define _USE_MATH_DEFINES
@@ -49,6 +51,13 @@ SDL_Joystick *sdljoy;
 
 joy_button_info joy_buttons[JOY_TOTAL_BUTTONS];
 
+float (*joy_curve)(float percent, float sensitivity_percent, float non_sensitivity_percent);
+
+float joy_curve_classic(float percent, float sensitivity_percent, float non_sensitivity_percent);
+float joy_curve_herra(float percent, float sensitivity_percent, float non_sensitivity_percent);
+float joy_curve_exponent(float percent, float sensitivity_percent, float non_sensitivity_percent);
+float joy_curve_piecewise(float percent, float sensitivity_percent, float non_sensitivity_percent);
+float joy_curve_line(float percent, float sensitivity_percent, float non_sensitivity_percent);
 
 void joy_close()
 {
@@ -66,6 +75,39 @@ void joy_close()
 	sdljoy = NULL;
 	
 	SDL_QuitSubSystem (SDL_INIT_JOYSTICK);
+}
+
+float joy_curve_classic(float percent, float sensitivity_percent, float non_sensitivity_percent)
+{
+	return (percent * sensitivity_percent + percent * percent * percent * percent * percent * non_sensitivity_percent);
+}
+
+float joy_curve_exponent(float percent, float sensitivity_percent, float non_sensitivity_percent)
+{
+	return (exp(percent)-1.0f)/(exp(1)-1.0f);
+}
+
+float joy_curve_herra(float percent, float sensitivity_percent, float non_sensitivity_percent)
+{
+	return (1.0f-cos(percent*M_PI*(Joy_sensitivity+1)/10.0f))/(1.0f-cos(M_PI*(Joy_sensitivity+1)/10.0f));
+}
+
+float joy_curve_line(float percent, float sensitivity_percent, float non_sensitivity_percent)
+{
+	return 0.01f;
+}
+
+float joy_curve_piecewise(float percent, float sensitivity_percent, float non_sensitivity_percent)
+{
+	if (percent < 0.7f) {
+		return 0.1f;
+	} else if (percent < 0.8f) {
+		return 0.2f;
+	} else if (percent < 0.9f) {
+		return 0.3f;
+	} else {
+		return 1.0f;
+	}
 }
 
 void joy_get_caps (int max)
@@ -261,35 +303,8 @@ int joy_get_scaled_reading(int raw, int axn)
 	// find percent of max axis is at
 	percent = (float) d / (float) rng;
 
-        // work sensitivity on axis value
-        switch (Dead_zone_size) {
-            case 0:
-                // classic curve
-                percent = (percent * sensitivity_percent + percent * percent * percent * percent * percent * non_sensitivity_percent);
-                break;
-            case 5:
-                // from herra
-                percent = (1.0f-cos(percent*M_PI*(Joy_sensitivity+1)/10.0f))/(1.0f-cos(M_PI*(Joy_sensitivity+1)/10.0f));
-                break;
-            case 10:
-                // pure exponential (no sensitivity adjustment)
-                percent = (exp(percent)-1.0f)/(exp(1)-1.0f);
-                break;
-            case 15:
-                // stupid piece-wise "curve"
-                if (percent < 0.7f) {
-                    percent = 0.1f;
-                } else if (percent < 0.8f) {
-                    percent = 0.2f;
-                } else if (percent < 0.9f) {
-                    percent = 0.3f;
-                } else {
-                    percent = 1.0f;
-                }
-                break;
-            default:
-                percent = 0.1f;
-        }
+	// work sensitivity on axis value
+	percent = joy_curve(percent, sensitivity_percent, non_sensitivity_percent);
 
 	x = (int) ((float) F1_0 * percent);
 
@@ -590,6 +605,26 @@ int joy_init()
 	Joy_inited = 1;
 
 	joy_ff_init();
+
+	// Set up the curves via commandline
+	switch (Cmdline_joystick_curves)
+	{
+	case 0:
+		joy_curve = *joy_curve_classic;
+		break;
+	case 1:
+		joy_curve = *joy_curve_herra;
+		break;
+	case 2:
+		joy_curve = *joy_curve_exponent;
+		break;
+	case 3:
+		joy_curve = *joy_curve_piecewise;
+		break;
+	default:
+		joy_curve = *joy_curve_line;
+		break;
+	}
 
 	mprintf(("... Joystick successfully initialized!\n"));
 
