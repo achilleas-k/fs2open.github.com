@@ -23,9 +23,14 @@ Adapted from http://www.hard-light.net/forums/index.php?topic=67633.msg1336430#m
 
     f(I) = I^(s/9)*((1-cos(I*π))/2)^((9-s)/9)
 
+
+![HerraTohtori (9)](herra_9.png "HerraTohtori (9)")
+
 Alternatively, a wider range of curves can be achieved by a small change in the last exponent.
 
     f(I) = I^(s/9)*((1-cos(I*π))/2)^((9-s)/4.5)
+
+![HerraTohtori (4.5)](herra_4.5.png "HerraTohtori (4.5)")
 
 ### Exponential curve (WIP)
 
@@ -33,6 +38,7 @@ Alternatively, a wider range of curves can be achieved by a small change in the 
 
 NB: Requires sensitivity parameter - might not make the final cut.
 
+![Exponential curve](exponential.png "Exponential curve")
 
 ### Logistic based (sigmoidal):
 
@@ -42,18 +48,25 @@ NB: Requires sensitivity parameter - might not make the final cut.
 
     f(I) = (S(I)-S(0))/(S(1)-S(0))
 
-### Yet another Herra suggestion
+![Logistic curve](logistic.png "Logistic curve")
+
+### Mixed curve
+*Yet another Herra suggestion.*
 Starts with an exponential shape at `s<5`, becomes linear at `s=5`, then becomes logarithmic at `s>5`.
 
     f(x) = I^(1+((5-s)/9))
 
 NB: The linear point (5) might be changed.
 
+![Mixed curve](mixed.png "Mixed curve")
+
 ### Polynomial
 
     f(I) = I*I^((9-s)/9)
 
 NB: **Redundant**. The entire behaviour of this curve can be achieved with a subset of sensitivity settings `s` on the current Windows curve.
+
+![Polynomial curve](polynomial.png "Polynomial curve")
 
 List of symbols
 ===============

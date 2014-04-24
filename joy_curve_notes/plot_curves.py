@@ -53,8 +53,13 @@ def logistic(x, s):
     return out
 
 
-def exp_to_log(x, s):
+def mixed(x, s):
     out = x**(1+((5-s)/9))
+    return out
+
+
+def polynomial(x, s):
+    out = x**(1+(9-s)/9)
     return out
 
 
@@ -63,8 +68,9 @@ if __name__ == "__main__":
     plot_func(windows, "Windows")
     plot_func(herra_tight, "Herra 9")
     plot_func(herra_wide, "Herra 4.5")
-    plot_func(exponential, "Exponential (WIP)")
+    plot_func(exponential, "Exponential")
     plot_func(logistic, "Logistic")
-    plot_func(exp_to_log, "Mixed")
+    plot_func(mixed, "Mixed")
+    plot_func(polynomial, "Polynomial")
     print("All done!")
     sys.exit(0)
