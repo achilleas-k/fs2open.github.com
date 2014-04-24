@@ -12,10 +12,21 @@ def plot_func(curve, name):
     for s in sens:
         plt.plot(x, curve(x, s), label=("%i" % s))
     plt.legend(loc="best")
-    plt.savefig("%s.png" % name)
-    np.frange(0, 1)
-    print("Saved figure %s.png" % (name))
+    filename = ("%s.png" % name).lower().replace(" ", "_")
+    plt.savefig(filename)
+    print("Saved figure %s" % (filename))
     return
+
+
+def retail(x, s):
+    non_perc = (9-s)/9
+    out = x*(s/9)+(x**5)*non_perc
+    return out
+
+
+def windows(x, s):
+    out = x**(3-(s/4.5))
+    return out
 
 
 def herra_tight(x, s):
@@ -33,13 +44,8 @@ def exponential(x, s):
     return out
 
 
-def sigm(x, s):
-    a = s+1
-    out = 1.0/(1+np.exp(a*(-x+0.5)))
-    return out
-
-
 def logistic(x, s):
+    sigm = lambda x, s: 1.0/(1+np.exp((s+1)*(-x+0.5)))
     s_x = sigm(x, s)
     s_one = sigm(1, s)
     s_zero = sigm(0, s)
@@ -47,10 +53,18 @@ def logistic(x, s):
     return out
 
 
+def exp_to_log(x, s):
+    out = x**(1+((5-s)/9))
+    return out
+
+
 if __name__ == "__main__":
-    plot_func(herra_tight, "Herra_9)")
-    plot_func(herra_wide, "Herra_4.5")
-    plot_func(exponential, "exp")
-    plot_func(logistic, "sigmoid")
+    plot_func(retail, "Retail")
+    plot_func(windows, "Windows")
+    plot_func(herra_tight, "Herra 9")
+    plot_func(herra_wide, "Herra 4.5")
+    plot_func(exponential, "Exponential (WIP)")
+    plot_func(logistic, "Logistic")
+    plot_func(exp_to_log, "Mixed")
     print("All done!")
     sys.exit(0)

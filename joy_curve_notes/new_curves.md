@@ -6,6 +6,8 @@ The joystick curve found in the retail game's source.
     n(x) = (9-x)/9
     f(I) = I*(s/9)+(I^5)*n(s)
 
+![Retail curve](retail.png "Retail curve")
+
 ### Current curve for Windows version
 The Windows version of `joy.cpp` got a new curve at some point.
 
