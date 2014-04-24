@@ -81,23 +81,23 @@ void joy_close()
 
 float joy_curve_retail(float percent, float Joy_sensitivity) {
     // Retail joystick curve
-    non_sensitivity_percent = (float) (9 - Joy_sensitivity) / 9.0f;
+    float non_sensitivity_percent = (float) (9 - Joy_sensitivity) / 9.0f;
     return percent * Joy_sensitivity + percent * percent * percent * percent * percent * non_sensitivity_percent;
 }
 
 float joy_curve_windows(float percent, float Joy_sensitivity) {
     // Windows joy.cpp curve
-    return math.pow(percent, 3.0f-(Joy_sensitivity/4.5f));
+    return pow(percent, 3.0f-(Joy_sensitivity/4.5f));
 }
 
 float joy_curve_herra(float percent, float Joy_sensitivity) {
     // sigmoidal curve (cosine-based)
-    return math.pow(percent, Joy_sensitivity/9.0f) * math.pow(((1.0f-cos(percent*M_PI))/2.0f), ((9-Joy_sensitivity)/9.0f));
+    return pow(percent, Joy_sensitivity/9.0f) * pow(((1.0f-cos(percent*M_PI))/2.0f), ((9-Joy_sensitivity)/9.0f));
 }
 
 float joy_curve_herra_wide(float percent, float Joy_sensitivity) {
     // wider curvature than the above -- higher cross-over point
-    return math.pow(percent, Joy_sensitivity/9.0f) * math.pow(((1.0f-cos(percent*M_PI))/2.0f), ((9-Joy_sensitivity)/4.5f));
+    return pow(percent, Joy_sensitivity/9.0f) * pow(((1.0f-cos(percent*M_PI))/2.0f), ((9-Joy_sensitivity)/4.5f));
 }
 
 float joy_curve_exponential(float percent, float Joy_sensitivity) {
@@ -116,11 +116,11 @@ float joy_curve_logistic(float percent, float Joy_sensitivity) {
 float joy_curve_mixed(float percent, float Joy_sensitivity) {
     // mixed curve behaves like exponential at sens < 5, linear at sens = 5
     // and logarithmic at sens > 5
-    return math.pow(percent, 1+((5-Joy_sensitivity)/9.0f));
+    return pow(percent, 1+((5-Joy_sensitivity)/9.0f));
 }
 
 float joy_curve_polynomial(float percent, float Joy_sensitivity) {
-    return math.pow(percent, 1+((9-Joy_sensitivity)/9.0f));
+    return pow(percent, 1+((9-Joy_sensitivity)/9.0f));
 }
 
 void joy_get_caps (int max)
@@ -278,7 +278,7 @@ int joy_get_unscaled_reading(int raw, int axn)
 int joy_get_scaled_reading(int raw, int axn)
 {
 	int x, d, dead_zone, rng;
-	float percent, sensitivity_percent, non_sensitivity_percent;
+	float percent, sensitivity_percent;
 
 	// Make sure it's calibrated properly.
 	if (joystick.axis_center[axn] - joystick.axis_min[axn] < 5)
@@ -316,7 +316,7 @@ int joy_get_scaled_reading(int raw, int axn)
 	percent = (float) d / (float) rng;
 
 	// work sensitivity on axis value
-	percent = joy_curve(percent, sensitivity_percent, non_sensitivity_percent);
+	percent = joy_curve(percent, sensitivity_percent);
 
 	x = (int) ((float) F1_0 * percent);
 
