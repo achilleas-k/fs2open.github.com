@@ -43,9 +43,7 @@ NB: Requires sensitivity parameter - might not make the final cut.
 
 ### Logistic based (sigmoidal):
 
-    a = s+1
-
-    S(x) = 1/(1+exp((a)*(-x+0.5)))
+    S(x) = 1/(1+exp((8-s)*(-x+0.5)))
 
     f(I) = (S(I)-S(0))/(S(1)-S(0))
 

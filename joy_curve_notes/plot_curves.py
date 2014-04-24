@@ -45,7 +45,7 @@ def exponential(x, s):
 
 
 def logistic(x, s):
-    sigm = lambda x, s: 1.0/(1+np.exp((s+1)*(-x+0.5)))
+    sigm = lambda x, s: 1.0/(1+np.exp((8-s)*(-x+0.5)))
     s_x = sigm(x, s)
     s_one = sigm(1, s)
     s_zero = sigm(0, s)
