@@ -13,6 +13,7 @@ The Windows version of `joy.cpp` got a new curve at some point.
 
     f(I) = I^(3-(s/4.5))
 
+![Windows curve](windows.png "Windows curve")
 
 Suggestions for new curves
 ===========================
