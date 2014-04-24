@@ -16,7 +16,6 @@
 #include "osapi/osapi.h"
 #include "osapi/osregistry.h"
 #include "SDL.h"
-
 #include <math.h>
 
 #define _USE_MATH_DEFINES
@@ -51,13 +50,16 @@ SDL_Joystick *sdljoy;
 
 joy_button_info joy_buttons[JOY_TOTAL_BUTTONS];
 
-float (*joy_curve)(float percent, float sensitivity_percent, float non_sensitivity_percent);
+float (*joy_curve)(float percent, float Joy_sensitivity);
 
-float joy_curve_classic(float percent, float sensitivity_percent, float non_sensitivity_percent);
-float joy_curve_herra(float percent, float sensitivity_percent, float non_sensitivity_percent);
-float joy_curve_exponent(float percent, float sensitivity_percent, float non_sensitivity_percent);
-float joy_curve_piecewise(float percent, float sensitivity_percent, float non_sensitivity_percent);
-float joy_curve_line(float percent, float sensitivity_percent, float non_sensitivity_percent);
+float joy_curve_retail(float percent, float Joy_sensitivity);
+float joy_curve_windows(float percent, float Joy_sensitivity);
+float joy_curve_herra(float percent, float Joy_sensitivity);
+float joy_curve_herra_wide(float percent, float Joy_sensitivity);
+float joy_curve_exponential(float percent, float Joy_sensitivity);
+float joy_curve_logistic(float percent, float Joy_sensitivity);
+float joy_curve_mixed(float percent, float Joy_sensitivity);
+float joy_curve_polynomial(float percent, float Joy_sensitivity);
 
 void joy_close()
 {
@@ -77,37 +79,48 @@ void joy_close()
 	SDL_QuitSubSystem (SDL_INIT_JOYSTICK);
 }
 
-float joy_curve_classic(float percent, float sensitivity_percent, float non_sensitivity_percent)
-{
-	return (percent * sensitivity_percent + percent * percent * percent * percent * percent * non_sensitivity_percent);
+float joy_curve_retail(float percent, float Joy_sensitivity) {
+    // Retail joystick curve
+    non_sensitivity_percent = (float) (9 - Joy_sensitivity) / 9.0f;
+    return percent * Joy_sensitivity + percent * percent * percent * percent * percent * non_sensitivity_percent;
 }
 
-float joy_curve_exponent(float percent, float sensitivity_percent, float non_sensitivity_percent)
-{
-	return (exp(percent)-1.0f)/(exp(1)-1.0f);
+float joy_curve_windows(float percent, float Joy_sensitivity) {
+    // Windows joy.cpp curve
+    return math.pow(percent, 3.0f-(Joy_sensitivity/4.5f));
 }
 
-float joy_curve_herra(float percent, float sensitivity_percent, float non_sensitivity_percent)
-{
-	return (1.0f-cos(percent*M_PI*(Joy_sensitivity+1)/10.0f))/(1.0f-cos(M_PI*(Joy_sensitivity+1)/10.0f));
+float joy_curve_herra(float percent, float Joy_sensitivity) {
+    // sigmoidal curve (cosine-based)
+    return math.pow(percent, Joy_sensitivity/9.0f) * math.pow(((1.0f-cos(percent*M_PI))/2.0f), ((9-Joy_sensitivity)/9.0f));
 }
 
-float joy_curve_line(float percent, float sensitivity_percent, float non_sensitivity_percent)
-{
-	return 0.01f;
+float joy_curve_herra_wide(float percent, float Joy_sensitivity) {
+    // wider curvature than the above -- higher cross-over point
+    return math.pow(percent, Joy_sensitivity/9.0f) * math.pow(((1.0f-cos(percent*M_PI))/2.0f), ((9-Joy_sensitivity)/4.5f));
 }
 
-float joy_curve_piecewise(float percent, float sensitivity_percent, float non_sensitivity_percent)
-{
-	if (percent < 0.7f) {
-		return 0.1f;
-	} else if (percent < 0.8f) {
-		return 0.2f;
-	} else if (percent < 0.9f) {
-		return 0.3f;
-	} else {
-		return 1.0f;
-	}
+float joy_curve_exponential(float percent, float Joy_sensitivity) {
+    // exponential curve -- needs work
+    return (exp(percent)-1)/(exp(1)-1);
+}
+
+float joy_curve_logistic(float percent, float Joy_sensitivity) {
+    // sigmoidal (logistic) curve -- needs work *and* simplification
+    float sigm_percent = 1.0f/(1+exp(8-Joy_sensitivity)*(-percent+0.5));
+    float sigm_zero = 1.0f/(1+exp(8-Joy_sensitivity)*(-0.5));
+    float sigm_one = 1.0f/(1+exp(8-Joy_sensitivity)*(0.5));
+    return (sigm_percent-sigm_zero)/(sigm_one-sigm_zero);
+}
+
+float joy_curve_mixed(float percent, float Joy_sensitivity) {
+    // mixed curve behaves like exponential at sens < 5, linear at sens = 5
+    // and logarithmic at sens > 5
+    return math.pow(percent, 1+((5-Joy_sensitivity)/9.0f));
+}
+
+float joy_curve_polynomial(float percent, float Joy_sensitivity) {
+    return math.pow(percent, 1+((9-Joy_sensitivity)/9.0f));
 }
 
 void joy_get_caps (int max)
@@ -298,7 +311,6 @@ int joy_get_scaled_reading(int raw, int axn)
 
 	// compute percentages as a range between 0 and 1
 	sensitivity_percent = (float) Joy_sensitivity / 9.0f;
-	non_sensitivity_percent = (float) (9 - Joy_sensitivity) / 9.0f;
 
 	// find percent of max axis is at
 	percent = (float) d / (float) rng;
@@ -610,19 +622,31 @@ int joy_init()
 	switch (Cmdline_joystick_curves)
 	{
 	case 0:
-		joy_curve = *joy_curve_classic;
+		joy_curve = *joy_curve_retail;
 		break;
 	case 1:
-		joy_curve = *joy_curve_herra;
+		joy_curve = *joy_curve_windows;
 		break;
 	case 2:
-		joy_curve = *joy_curve_exponent;
+		joy_curve = *joy_curve_herra;
 		break;
 	case 3:
-		joy_curve = *joy_curve_piecewise;
+		joy_curve = *joy_curve_herra_wide;
+		break;
+	case 4:
+		joy_curve = *joy_curve_exponential;
+		break;
+	case 5:
+		joy_curve = *joy_curve_logistic;
+		break;
+	case 6:
+		joy_curve = *joy_curve_mixed;
+		break;
+	case 7:
+		joy_curve = *joy_curve_exponential;
 		break;
 	default:
-		joy_curve = *joy_curve_line;
+		joy_curve = *joy_curve_retail;
 		break;
 	}
 
