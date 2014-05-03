@@ -100,8 +100,9 @@ float joy_curve_herra_wide(float percent, float Joy_sensitivity) {
 }
 
 float joy_curve_exponential(float percent, float Joy_sensitivity) {
-    // exponential curve -- needs work
-    return (exp(percent)-1)/(exp(1)-1);
+    // exponential curve
+    //return (exp(percent)-1)/(M_E-1);
+    return (exp((10.0f-Joy_sensitivity)*percent)-1)/(exp(10.0f-Joy_sensitivity)-1);
 }
 
 float joy_curve_mixed(float percent, float Joy_sensitivity) {
