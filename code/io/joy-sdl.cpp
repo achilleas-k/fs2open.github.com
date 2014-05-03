@@ -57,9 +57,9 @@ float joy_curve_windows(float percent, float Joy_sensitivity);
 float joy_curve_herra(float percent, float Joy_sensitivity);
 float joy_curve_herra_wide(float percent, float Joy_sensitivity);
 float joy_curve_exponential(float percent, float Joy_sensitivity);
-float joy_curve_logistic(float percent, float Joy_sensitivity);
 float joy_curve_mixed(float percent, float Joy_sensitivity);
 float joy_curve_polynomial(float percent, float Joy_sensitivity);
+float joy_curve_debug(float percent, float Joy_sensitivity);
 
 void joy_close()
 {
@@ -86,7 +86,7 @@ float joy_curve_retail(float percent, float Joy_sensitivity) {
 }
 
 float joy_curve_windows(float percent, float Joy_sensitivity) {
-    // Windows joy.cpp curve
+    // Windows joystick curve
     return pow(percent, 3.0f-(Joy_sensitivity/4.5f));
 }
 
@@ -105,14 +105,6 @@ float joy_curve_exponential(float percent, float Joy_sensitivity) {
     return (exp(percent)-1)/(exp(1)-1);
 }
 
-float joy_curve_logistic(float percent, float Joy_sensitivity) {
-    // sigmoidal (logistic) curve -- needs work *and* simplification
-    float sigm_percent = 1.0f/(1+exp(8-Joy_sensitivity)*(-percent+0.5));
-    float sigm_zero = 1.0f/(1+exp(8-Joy_sensitivity)*(-0.5));
-    float sigm_one = 1.0f/(1+exp(8-Joy_sensitivity)*(0.5));
-    return (sigm_percent-sigm_zero)/(sigm_one-sigm_zero);
-}
-
 float joy_curve_mixed(float percent, float Joy_sensitivity) {
     // mixed curve behaves like exponential at sens < 5, linear at sens = 5
     // and logarithmic at sens > 5
@@ -121,6 +113,11 @@ float joy_curve_mixed(float percent, float Joy_sensitivity) {
 
 float joy_curve_polynomial(float percent, float Joy_sensitivity) {
     return pow(percent, 1+((9-Joy_sensitivity)/9.0f));
+}
+
+float joy_curve_debug(float percent, float Joy_sensitivity) {
+    // Useless curve for checking if the switch actually works
+    return 0.3;
 }
 
 void joy_get_caps (int max)
@@ -637,14 +634,14 @@ int joy_init()
 		joy_curve = *joy_curve_exponential;
 		break;
 	case 5:
-		joy_curve = *joy_curve_logistic;
-		break;
-	case 6:
 		joy_curve = *joy_curve_mixed;
 		break;
-	case 7:
-		joy_curve = *joy_curve_exponential;
-		break;
+        case 6:
+                joy_curve = *joy_curve_polynomial;
+                break;
+        case 7:
+                joy_curve = *joy_curve_debug;
+                break;
 	default:
 		joy_curve = *joy_curve_retail;
 		break;
