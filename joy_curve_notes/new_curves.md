@@ -1,7 +1,8 @@
 Existing curves
 ===============
 ### Retail curve
-(`-joystick_curves 0`)
+`-joystick_curves 0`
+
 The joystick curve found in the retail game's source.
 
     n(x) = (9-x)/9
@@ -10,7 +11,8 @@ The joystick curve found in the retail game's source.
 ![Retail curve](retail.png "Retail curve")
 
 ### Current curve for Windows version
-(`-joystick_curves 1`)
+`-joystick_curves 1`
+
 The Windows version of `joy.cpp` got a new curve at some point.
 
     f(I) = I^(3-(s/4.5))
@@ -22,7 +24,8 @@ Suggestions for new curves
 The following curves will be added for testing.
 
 ### Herra's suggestion
-(`-joystick_curves 2`)
+`-joystick_curves 2`
+
 Adapted from http://www.hard-light.net/forums/index.php?topic=67633.msg1336430#msg1336430
 
     f(I) = I^(s/9)*((1-cos(I*π))/2)^((9-s)/9)
@@ -31,14 +34,15 @@ Adapted from http://www.hard-light.net/forums/index.php?topic=67633.msg1336430#m
 ![HerraTohtori (9)](herra_9.png "HerraTohtori (9)")
 
 Alternatively, a wider range of curves can be achieved by a small change in the last exponent. 
-(`-joystick_curves 3`)
+
+`-joystick_curves 3`
 
     f(I) = I^(s/9)*((1-cos(I*π))/2)^((9-s)/4.5)
 
 ![HerraTohtori (4.5)](herra_4.5.png "HerraTohtori (4.5)")
 
 ### Exponential curve
-(`-joystick_curves 4`)
+`-joystick_curves 4`
 
     f(I) = (exp(I)-1)/(exp(1)-1)
 
@@ -46,10 +50,12 @@ NB: Ignores sensitivity setting.
 
 ![Exponential curve](exponential.png "Exponential curve")
 
-### Mixed curve
-(`-joystick_curves 5`)
+### Mixed power curve
+`-joystick_curves 5`
+
 *Yet another Herra suggestion.*
-Starts with an exponential shape at `s<5`, becomes linear at `s=5`, then becomes logarithmic at `s>5`.
+
+Starts with a positive power shape at `s<5`, becomes linear at `s=5`, then takes a fractional power shape at `s>5`.
 
     f(x) = I^(1+((5-s)/9))
 
@@ -57,8 +63,8 @@ NB: The linear point (5) might be changed.
 
 ![Mixed curve](mixed.png "Mixed curve")
 
-### Polynomial
-(`-joystick_curves 6`)
+### Power curve
+`-joystick_curves 6`
 
     f(I) = I*I^((9-s)/9)
 
@@ -67,7 +73,7 @@ NB: **Redundant**. The entire behaviour of this curve can be achieved with a sub
 ![Polynomial curve](polynomial.png "Polynomial curve")
 
 ### Debug
-(`-joystick_curve 7`)
+`-joystick_curve 7`
 
 This curve just returns `f(I) = 0.3` for debugging purposes.
 

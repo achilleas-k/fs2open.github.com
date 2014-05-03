@@ -58,7 +58,7 @@ float joy_curve_herra(float percent, float Joy_sensitivity);
 float joy_curve_herra_wide(float percent, float Joy_sensitivity);
 float joy_curve_exponential(float percent, float Joy_sensitivity);
 float joy_curve_mixed(float percent, float Joy_sensitivity);
-float joy_curve_polynomial(float percent, float Joy_sensitivity);
+float joy_curve_power(float percent, float Joy_sensitivity);
 float joy_curve_debug(float percent, float Joy_sensitivity);
 
 void joy_close()
@@ -106,12 +106,13 @@ float joy_curve_exponential(float percent, float Joy_sensitivity) {
 }
 
 float joy_curve_mixed(float percent, float Joy_sensitivity) {
-    // mixed curve behaves like exponential at sens < 5, linear at sens = 5
-    // and logarithmic at sens > 5
+    // mixed curve behaves like positive power at sens < 5, linear at sens = 5
+    // and fractional power at sens > 5
     return pow(percent, 1+((5-Joy_sensitivity)/9.0f));
 }
 
-float joy_curve_polynomial(float percent, float Joy_sensitivity) {
+float joy_curve_power(float percent, float Joy_sensitivity) {
+    // Somewhat redundant - It is a subset of the Windows curve
     return pow(percent, 1+((9-Joy_sensitivity)/9.0f));
 }
 
@@ -637,7 +638,7 @@ int joy_init()
 		joy_curve = *joy_curve_mixed;
 		break;
         case 6:
-                joy_curve = *joy_curve_polynomial;
+                joy_curve = *joy_curve_power;
                 break;
         case 7:
                 joy_curve = *joy_curve_debug;
