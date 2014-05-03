@@ -69,7 +69,7 @@ NB: The linear point (5) might be changed.
 
 NB: **Redundant**. The entire behaviour of this curve can be achieved with a subset of sensitivity settings `s` on the current Windows curve.
 
-![Polynomial curve](polynomial.png "Polynomial curve")
+![Power curve](power.png "Power curve")
 
 ### Debug
 `-joystick_curve 7`
