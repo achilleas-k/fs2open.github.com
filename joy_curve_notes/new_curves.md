@@ -43,9 +43,9 @@ Alternatively, a wider range of curves can be achieved by a small change in the 
 ### Exponential curve
 `-joystick_curves 4`
 
-    f(I) = (exp(I)-1)/(exp(1)-1)
+    f(I) = (exp((10-s)*I)-1)/(exp(10-s)-1)
 
-NB: Ignores sensitivity setting.
+NB: Does not become linear at `s=9`
 
 ![Exponential curve](exponential.png "Exponential curve")
 
@@ -80,5 +80,5 @@ List of symbols
 ===============
 
     I    : input percent (position of joystick on half-axis).
-    s    : in-game sensitivity setting [0..9].
+    s    : in-game sensitivity setting [0..9], where 0 corresponds to 1 sensitivity dot and 9 corresponds to 10 dots.
     f(I) : translation of input percent to output (the result of the curve function).

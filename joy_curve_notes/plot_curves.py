@@ -39,7 +39,7 @@ def herra_wide(x, s):
 
 
 def exponential(x, s):
-    out = (np.exp(x)-1)/(np.exp(1)-1)
+    out = (np.exp((10-s)*x)-1)/(np.exp(10-s)-1)
     return out
 
 
