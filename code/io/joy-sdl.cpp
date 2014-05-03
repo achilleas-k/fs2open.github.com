@@ -81,7 +81,7 @@ void joy_close()
 
 float joy_curve_retail(float percent, float Joy_sensitivity) {
     // Retail joystick curve
-    return percent*Joy_sensitivity+percent*percent*percent*percent*percent*(9-Joy_sensitivity)/9.0f;
+    return percent*Joy_sensitivity/9.0f+percent*percent*percent*percent*percent*(9-Joy_sensitivity)/9.0f;
 }
 
 float joy_curve_windows(float percent, float Joy_sensitivity) {
@@ -313,7 +313,8 @@ int joy_get_scaled_reading(int raw, int axn)
 	percent = (float) d / (float) rng;
 
 	// work sensitivity on axis value
-	percent = joy_curve(percent, sensitivity_percent);
+	//percent = joy_curve(percent, sensitivity_percent);
+        percent = joy_curve(percent, Joy_sensitivity);
 
 	x = (int) ((float) F1_0 * percent);
 
