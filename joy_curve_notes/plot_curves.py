@@ -19,8 +19,7 @@ def plot_func(curve, name):
 
 
 def retail(x, s):
-    non_perc = (9-s)/9
-    out = x*(s/9)+(x**5)*non_perc
+    out = x*(s/9)+(x**5)*(9-s)/9
     return out
 
 
@@ -44,21 +43,12 @@ def exponential(x, s):
     return out
 
 
-def logistic(x, s):
-    sigm = lambda x, s: 1.0/(1+np.exp((8-s)*(-x+0.5)))
-    s_x = sigm(x, s)
-    s_one = sigm(1, s)
-    s_zero = sigm(0, s)
-    out = (s_x - s_zero)/(s_one - s_zero)
-    return out
-
-
 def mixed(x, s):
     out = x**(1+((5-s)/9))
     return out
 
 
-def polynomial(x, s):
+def power(x, s):
     out = x**(1+(9-s)/9)
     return out
 
@@ -69,8 +59,7 @@ if __name__ == "__main__":
     plot_func(herra_tight, "Herra 9")
     plot_func(herra_wide, "Herra 4.5")
     plot_func(exponential, "Exponential")
-    plot_func(logistic, "Logistic")
     plot_func(mixed, "Mixed")
-    plot_func(polynomial, "Polynomial")
+    plot_func(power, "Power")
     print("All done!")
     sys.exit(0)

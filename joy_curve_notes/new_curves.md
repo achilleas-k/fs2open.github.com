@@ -5,8 +5,7 @@ Existing curves
 
 The joystick curve found in the retail game's source.
 
-    n(x) = (9-x)/9
-    f(I) = I*(s/9)+(I^5)*n(s)
+    f(I) = I*(s/9)+(I^5)*(9-s)/9
 
 ![Retail curve](retail.png "Retail curve")
 
