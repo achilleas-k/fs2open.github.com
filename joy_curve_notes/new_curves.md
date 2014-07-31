@@ -20,7 +20,7 @@ The Windows version of `joy.cpp` got a new curve at some point.
 
 Suggestions for new curves
 ===========================
-The following curves will be added for testing.
+The following curves have been added.
 
 ### Herra's suggestion
 `-joystick_curves 2`
